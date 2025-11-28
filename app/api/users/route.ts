@@ -5,8 +5,6 @@ import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 import { UserDatabase, AuditLogDatabase } from "@/lib/api/firestore"
 
 // Initialize Firebase Admin
-initializeFirebaseAdmin()
-
 /**
  * GET /api/users
  * List all users with optional filters

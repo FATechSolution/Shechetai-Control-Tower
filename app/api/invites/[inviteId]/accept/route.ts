@@ -3,7 +3,7 @@ import { successResponse, errorResponse, handleApiError } from "@/lib/api/helper
 import { Database } from "@/lib/api/database-bridge"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 
-initializeFirebaseAdmin()
+
 
 interface RouteContext {
   params: Promise<{
@@ -18,10 +18,10 @@ interface RouteContext {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { inviteId } = await context.params
-    
+
     // Get invite details
     const invite = await Database.getInviteById(inviteId)
-    
+
     if (!invite) {
       return errorResponse("Invite not found", 404)
     }
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Get user ID from request (if authenticated) or create new user
     // For now, we'll update the invite status and add member in a simplified way
     let userId = null
-    
+
     // Try to get user ID from auth header
     const authHeader = request.headers.get("authorization")
     if (authHeader?.startsWith("Bearer ")) {
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (!userId) {
       const users = await Database.getUsers()
       const existingUser = users.find(u => u.email === invite.email)
-      
+
       if (existingUser) {
         userId = (existingUser as any).id || existingUser.userId
       } else {

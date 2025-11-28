@@ -3,9 +3,6 @@ import { withAuth } from "@/lib/api/middleware"
 import { successResponse, errorResponse, handleApiError } from "@/lib/api/helpers"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 import { getFirestore } from "firebase-admin/firestore"
-
-initializeFirebaseAdmin()
-
 /**
  * POST /api/credits/report-run
  * Internal endpoint - Report an agent run and debit credits from team wallet

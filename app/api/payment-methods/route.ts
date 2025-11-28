@@ -4,9 +4,6 @@ import { successResponse, errorResponse, handleApiError } from "@/lib/api/helper
 import { Database } from "@/lib/api/database-bridge"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 import { listPaymentMethods, createCustomer } from "@/lib/stripe/stripe-server"
-
-initializeFirebaseAdmin()
-
 /**
  * GET /api/payment-methods
  * Get payment methods for a team from Stripe

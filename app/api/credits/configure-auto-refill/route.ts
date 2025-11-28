@@ -3,9 +3,6 @@ import { withAuth } from "@/lib/api/middleware"
 import { successResponse, errorResponse, handleApiError } from "@/lib/api/helpers"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 import { getFirestore } from "firebase-admin/firestore"
-
-initializeFirebaseAdmin()
-
 /**
  * POST /api/credits/configure-auto-refill
  * Configure automatic credit refill for per-run billing agents

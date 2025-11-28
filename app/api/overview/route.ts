@@ -3,9 +3,6 @@ import { withAuth } from "@/lib/api/middleware"
 import { successResponse, handleApiError } from "@/lib/api/helpers"
 import { Database } from "@/lib/api/database-bridge"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
-
-initializeFirebaseAdmin()
-
 /**
  * GET /api/overview
  * Get platform overview statistics from Firestore

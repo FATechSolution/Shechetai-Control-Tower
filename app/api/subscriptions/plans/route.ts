@@ -3,9 +3,6 @@ import { withAuth } from "@/lib/api/middleware"
 import { successResponse, errorResponse, handleApiError } from "@/lib/api/helpers"
 import { Database } from "@/lib/api/database-bridge"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
-
-initializeFirebaseAdmin()
-
 /**
  * GET /api/subscriptions/plans
  * List all available subscription plans

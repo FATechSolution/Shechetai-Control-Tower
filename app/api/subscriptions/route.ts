@@ -5,8 +5,6 @@ import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 import { SubscriptionDatabase, SubscriptionDatabase as SubDB, TeamDatabase, AuditLogDatabase } from "@/lib/api/firestore"
 
 // Initialize Firebase Admin
-initializeFirebaseAdmin()
-
 /**
  * GET /api/subscriptions
  * Get subscriptions with optional team filter

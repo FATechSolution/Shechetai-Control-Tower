@@ -3,9 +3,6 @@ import { withAuth } from "@/lib/api/middleware"
 import { successResponse, handleApiError, parsePagination, createPaginatedResponse } from "@/lib/api/helpers"
 import { Database } from "@/lib/api/database-bridge"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
-
-initializeFirebaseAdmin()
-
 /**
  * GET /api/audit-logs
  * Get audit logs with filtering options

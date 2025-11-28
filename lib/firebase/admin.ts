@@ -23,22 +23,34 @@ export function initializeFirebaseAdmin() {
     return { app: adminApp, auth: adminAuth, db: adminDb };
   }
 
+  // Check if required environment variables are available
+  // During build time on Vercel, these might not be set
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+  if (!projectId || !clientEmail || !privateKey) {
+    console.warn('⚠️ Firebase Admin credentials not available (build time). Skipping initialization.');
+    // Return mock objects that won't be used during build
+    return { app: undefined as any, auth: undefined as any, db: undefined as any };
+  }
+
   try {
     // Initialize with environment variables
     adminApp = initializeApp({
       credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        projectId,
+        clientEmail,
+        privateKey: privateKey.replace(/\\n/g, '\n'),
       }),
-      projectId: process.env.FIREBASE_PROJECT_ID,
+      projectId,
     });
 
     adminAuth = getAuth(adminApp);
     adminDb = getFirestore(adminApp);
 
     console.log('✅ Firebase Admin SDK initialized successfully');
-    
+
     return { app: adminApp, auth: adminAuth, db: adminDb };
   } catch (error) {
     console.error('❌ Firebase Admin initialization error:', error);
@@ -54,7 +66,7 @@ export function getFirebaseAuth(): Auth {
     const { auth } = initializeFirebaseAdmin();
     adminAuth = auth;
   }
-  return adminAuth;
+  return adminAuth!;
 }
 
 /**
@@ -65,7 +77,7 @@ export function getFirebaseDb(): Firestore {
     const { db } = initializeFirebaseAdmin();
     adminDb = db;
   }
-  return adminDb;
+  return adminDb!;
 }
 
 /**
@@ -105,7 +117,7 @@ export async function getUserByUid(uid: string) {
  * @param additionalClaims - Custom claims to include
  */
 export async function createCustomToken(
-  uid: string, 
+  uid: string,
   additionalClaims?: Record<string, any>
 ) {
   const auth = getFirebaseAuth();

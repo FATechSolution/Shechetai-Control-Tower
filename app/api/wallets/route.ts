@@ -5,8 +5,6 @@ import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 import { WalletDatabase, TeamDatabase } from "@/lib/api/firestore"
 
 // Initialize Firebase Admin
-initializeFirebaseAdmin()
-
 /**
  * GET /api/wallets
  * Get wallets - all wallets or by teamId (query parameter)

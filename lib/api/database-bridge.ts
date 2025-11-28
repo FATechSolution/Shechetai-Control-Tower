@@ -22,8 +22,7 @@ import {
   TeamInviteDatabase,
 } from "./firestore"
 
-// Initialize Firebase on import
-initializeFirebaseAdmin()
+// Firebase will be initialized lazily when database operations are called
 
 /**
  * Bridge class that provides the same interface as Database mock

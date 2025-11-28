@@ -3,9 +3,6 @@ import { withAuth } from "@/lib/api/middleware"
 import { successResponse, errorResponse, handleApiError } from "@/lib/api/helpers"
 import { Database } from "@/lib/api/database-bridge"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
-
-initializeFirebaseAdmin()
-
 /**
  * POST /api/credits/purchase-pack
  * Team owner purchases a credit pack and adds credits to wallet

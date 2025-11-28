@@ -5,8 +5,6 @@ import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 import { TeamDatabase } from "@/lib/api/firestore"
 
 // Initialize Firebase Admin
-initializeFirebaseAdmin()
-
 /**
  * GET /api/teams
  * List all teams with optional filters

@@ -5,8 +5,6 @@ import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 import { AgentDatabase } from "@/lib/api/firestore"
 
 // Initialize Firebase Admin
-initializeFirebaseAdmin()
-
 /**
  * GET /api/agents
  * List all agents from backend

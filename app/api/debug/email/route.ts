@@ -3,9 +3,6 @@ import { withAuth } from "@/lib/api/middleware"
 import { successResponse, errorResponse, handleApiError } from "@/lib/api/helpers"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 import nodemailer from "nodemailer"
-
-initializeFirebaseAdmin()
-
 /**
  * POST /api/debug/email
  * Send a test email via SMTP
