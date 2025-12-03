@@ -20,6 +20,7 @@ import {
   ReferralDatabase,
   TeamMemberDatabase,
   TeamInviteDatabase,
+  PlanDatabase,
 } from "./firestore"
 
 // Firebase will be initialized lazily when database operations are called
@@ -220,7 +221,7 @@ const DatabaseBridge = {
   // Missing methods for backward compatibility with old routes
   getInvoices: async (teamId?: string) => [],
   createInvoice: async (data: any) => ({ id: "mock", ...data }),
-  getPlans: async () => [],
+  getPlans: async () => PlanDatabase.getActive(),
   createPlan: async (data: any) => ({ id: "mock", ...data }),
   deletePlan: async (planId: string) => true,
   setDefaultPaymentMethod: async (methodId: string) => ({ id: methodId, isDefault: true }),

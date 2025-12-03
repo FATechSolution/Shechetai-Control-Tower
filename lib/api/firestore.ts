@@ -450,37 +450,92 @@ export class TransactionDatabase {
 }
 
 /**
+ * Subscription Plan operations
+ */
+export class PlanDatabase {
+  private static collection = "subscriptionPlans"
+
+  static async getAll(): Promise<SubscriptionPlan[]> {
+    const plans = await FirestoreDatabase.getAll<SubscriptionPlan>(this.collection)
+    return plans.map(plan => ({
+      ...plan,
+      planId: (plan as any).id
+    }))
+  }
+
+  static async getActive(): Promise<SubscriptionPlan[]> {
+    const plans = await FirestoreDatabase.query<SubscriptionPlan>(this.collection, [
+      { field: "status", op: "==", value: "active" }
+    ])
+    return plans.map(plan => ({
+      ...plan,
+      planId: (plan as any).id
+    }))
+  }
+
+  static async getById(planId: string): Promise<SubscriptionPlan | null> {
+    const plan = await FirestoreDatabase.getById<SubscriptionPlan>(this.collection, planId)
+    return plan ? { ...plan, planId: (plan as any).id } : null
+  }
+
+  static async create(data: Omit<SubscriptionPlan, 'planId'>): Promise<SubscriptionPlan> {
+    const plan = await FirestoreDatabase.create<SubscriptionPlan>(this.collection, data as any)
+    return { ...plan, planId: (plan as any).id }
+  }
+
+  static async update(planId: string, data: Partial<SubscriptionPlan>): Promise<SubscriptionPlan | null> {
+    const plan = await FirestoreDatabase.update<SubscriptionPlan>(this.collection, planId, data)
+    return plan ? { ...plan, planId: (plan as any).id } : null
+  }
+}
+
+/**
  * Subscription operations
  */
 export class SubscriptionDatabase {
   private static collection = "subscriptions"
 
   static async getAll(): Promise<Subscription[]> {
-    return FirestoreDatabase.getAll<Subscription>(this.collection)
+    const subs = await FirestoreDatabase.getAll<Subscription>(this.collection)
+    return subs.map(sub => ({
+      ...sub,
+      subscriptionId: (sub as any).id
+    }))
   }
 
   static async getById(subscriptionId: string): Promise<Subscription | null> {
-    return FirestoreDatabase.getById<Subscription>(this.collection, subscriptionId)
+    const sub = await FirestoreDatabase.getById<Subscription>(this.collection, subscriptionId)
+    return sub ? { ...sub, subscriptionId: (sub as any).id } : null
   }
 
   static async getByUser(userId: string): Promise<Subscription[]> {
-    return FirestoreDatabase.query<Subscription>(this.collection, [
+    const subs = await FirestoreDatabase.query<Subscription>(this.collection, [
       { field: "userId", op: "==", value: userId }
     ])
+    return subs.map(sub => ({
+      ...sub,
+      subscriptionId: (sub as any).id
+    }))
   }
 
   static async getByTeamId(teamId: string): Promise<Subscription[]> {
-    return FirestoreDatabase.query<Subscription>(this.collection, [
+    const subs = await FirestoreDatabase.query<Subscription>(this.collection, [
       { field: "teamId", op: "==", value: teamId }
     ])
+    return subs.map(sub => ({
+      ...sub,
+      subscriptionId: (sub as any).id
+    }))
   }
 
   static async create(data: Omit<Subscription, 'subscriptionId'>): Promise<Subscription> {
-    return FirestoreDatabase.create<Subscription>(this.collection, data as any)
+    const sub = await FirestoreDatabase.create<Subscription>(this.collection, data as any)
+    return { ...sub, subscriptionId: (sub as any).id }
   }
 
   static async update(subscriptionId: string, data: Partial<Subscription>): Promise<Subscription | null> {
-    return FirestoreDatabase.update<Subscription>(this.collection, subscriptionId, data)
+    const sub = await FirestoreDatabase.update<Subscription>(this.collection, subscriptionId, data)
+    return sub ? { ...sub, subscriptionId: (sub as any).id } : null
   }
 }
 
@@ -568,25 +623,36 @@ export class WhiteLabelDatabase {
   private static collection = "whiteLabelConfigs"
 
   static async getAll(): Promise<WhiteLabelConfig[]> {
-    return FirestoreDatabase.getAll<WhiteLabelConfig>(this.collection)
+    const configs = await FirestoreDatabase.getAll<WhiteLabelConfig>(this.collection)
+    return configs.map(config => ({
+      ...config,
+      configId: (config as any).id
+    }))
   }
 
   static async getById(configId: string): Promise<WhiteLabelConfig | null> {
-    return FirestoreDatabase.getById<WhiteLabelConfig>(this.collection, configId)
+    const config = await FirestoreDatabase.getById<WhiteLabelConfig>(this.collection, configId)
+    return config ? { ...config, configId: (config as any).id } : null
   }
 
   static async getByTeamId(teamId: string): Promise<WhiteLabelConfig[]> {
-    return FirestoreDatabase.query<WhiteLabelConfig>(this.collection, [
+    const configs = await FirestoreDatabase.query<WhiteLabelConfig>(this.collection, [
       { field: "teamId", op: "==", value: teamId }
     ])
+    return configs.map(config => ({
+      ...config,
+      configId: (config as any).id
+    }))
   }
 
   static async create(data: Omit<WhiteLabelConfig, 'configId'>): Promise<WhiteLabelConfig> {
-    return FirestoreDatabase.create<WhiteLabelConfig>(this.collection, data as any)
+    const config = await FirestoreDatabase.create<WhiteLabelConfig>(this.collection, data as any)
+    return { ...config, configId: (config as any).id }
   }
 
   static async update(configId: string, data: Partial<WhiteLabelConfig>): Promise<WhiteLabelConfig | null> {
-    return FirestoreDatabase.update<WhiteLabelConfig>(this.collection, configId, data)
+    const config = await FirestoreDatabase.update<WhiteLabelConfig>(this.collection, configId, data)
+    return config ? { ...config, configId: (config as any).id } : null
   }
 
   static async delete(configId: string): Promise<boolean> {
@@ -601,25 +667,36 @@ export class ReferralDatabase {
   private static collection = "referrals"
 
   static async getAll(): Promise<Referral[]> {
-    return FirestoreDatabase.getAll<Referral>(this.collection)
+    const referrals = await FirestoreDatabase.getAll<Referral>(this.collection)
+    return referrals.map(ref => ({
+      ...ref,
+      referralId: (ref as any).id
+    }))
   }
 
   static async getById(referralId: string): Promise<Referral | null> {
-    return FirestoreDatabase.getById<Referral>(this.collection, referralId)
+    const ref = await FirestoreDatabase.getById<Referral>(this.collection, referralId)
+    return ref ? { ...ref, referralId: (ref as any).id } : null
   }
 
   static async getByReferrer(referrerId: string): Promise<Referral[]> {
-    return FirestoreDatabase.query<Referral>(this.collection, [
+    const referrals = await FirestoreDatabase.query<Referral>(this.collection, [
       { field: "referrerId", op: "==", value: referrerId }
     ])
+    return referrals.map(ref => ({
+      ...ref,
+      referralId: (ref as any).id
+    }))
   }
 
   static async create(data: Omit<Referral, 'referralId'>): Promise<Referral> {
-    return FirestoreDatabase.create<Referral>(this.collection, data as any)
+    const ref = await FirestoreDatabase.create<Referral>(this.collection, data as any)
+    return { ...ref, referralId: (ref as any).id }
   }
 
   static async update(referralId: string, data: Partial<Referral>): Promise<Referral | null> {
-    return FirestoreDatabase.update<Referral>(this.collection, referralId, data)
+    const ref = await FirestoreDatabase.update<Referral>(this.collection, referralId, data)
+    return ref ? { ...ref, referralId: (ref as any).id } : null
   }
 }
 

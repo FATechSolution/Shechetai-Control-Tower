@@ -30,7 +30,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
       const cancelAtPeriodEnd = body.cancelAtPeriodEnd !== false
 
       const updatedSubscription = await Database.updateSubscription(subscriptionId, {
-        status: cancelAtPeriodEnd ? subscription.status : "cancelled",
+        status: "cancelled",
+        cancelledAt: new Date().toISOString(),
         cancelAtPeriodEnd,
       })
 

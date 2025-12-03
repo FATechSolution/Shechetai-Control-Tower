@@ -24,6 +24,8 @@ export default function ReferralsPage() {
 
   useEffect(() => {
     fetchReferrals()
+    const interval = setInterval(() => fetchReferrals(), 5000)
+    return () => clearInterval(interval)
   }, [])
 
   const fetchReferrals = async () => {
@@ -77,28 +79,71 @@ export default function ReferralsPage() {
     }
   }
 
-  const mockReferralData = referrals.length > 0 ? {
-    code: referrals[0].code || "SHECHET2024",
-    referrerId: referrals[0].referrerId || "partner_001",
-    rateBps: referrals[0].rateBps || 2000,
-    currentMonth: {
-      month: "2024-01",
-      estimatedCents: referrals[0].rewardAmount || 12345,
-    },
-    history: [
-      { month: "2024-01", totalCents: 10000, paid: false },
-      { month: "2023-12", totalCents: 8500, paid: true },
-      { month: "2023-11", totalCents: 7200, paid: true },
-    ],
-  } : {
-    code: "SHECHET2024",
-    referrerId: "partner_001",
-    rateBps: 2000,
-    currentMonth: {
-      month: "2024-01",
-      estimatedCents: 12345,
-    },
-    history: [
+  const calculateStats = () => {
+    if (!referrals || referrals.length === 0) {
+      return {
+        code: "No referrals yet",
+        earned: 0,
+        monthlyEarnings: 0,
+        history: [],
+      }
+    }
+
+    // Get the commission rate from first referral
+    const commissionRate = (referrals[0]?.metadata?.commissionRate || referrals[0]?.commissionRate || 20) / 100
+
+    // Convert Firestore timestamps to dates
+    const convertToDate = (timestamp: any) => {
+      if (!timestamp) return null
+      if (timestamp.toDate) return timestamp.toDate()
+      if (timestamp.seconds) return new Date(timestamp.seconds * 1000)
+      if (typeof timestamp === 'string') return new Date(timestamp)
+      if (timestamp instanceof Date) return timestamp
+      return null
+    }
+
+    // Group referrals by month
+    const monthlyData: { [key: string]: number } = {}
+    let currentMonthEarnings = 0
+    const now = new Date()
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+
+    referrals.forEach((ref: any) => {
+      const createdDate = convertToDate(ref.createdAt)
+      if (!createdDate) return
+
+      const month = `${createdDate.getFullYear()}-${String(createdDate.getMonth() + 1).padStart(2, '0')}`
+      const amount = (ref.rewardAmount || 0)
+
+      monthlyData[month] = (monthlyData[month] || 0) + amount
+
+      if (month === currentMonth) {
+        currentMonthEarnings += amount
+      }
+    })
+
+    // Calculate total earnings
+    const totalEarnings = Object.values(monthlyData).reduce((sum, val) => sum + val, 0)
+
+    // Create history from monthly data
+    const history = Object.entries(monthlyData)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([month, amount]) => ({
+        month,
+        earned: amount,
+        paid: Math.random() > 0.5, // Mock status for now
+      }))
+
+    return {
+      code: referrals[0]?.code || `SHECHET-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+      earned: totalEarnings,
+      monthlyEarnings: currentMonthEarnings,
+      commissionRate: (commissionRate * 100).toFixed(1) + '%',
+      history,
+    }
+  }
+
+  const stats = calculateStats()
       { month: "2024-01", totalCents: 10000, paid: false },
       { month: "2023-12", totalCents: 8500, paid: true },
       { month: "2023-11", totalCents: 7200, paid: true },
@@ -161,7 +206,7 @@ export default function ReferralsPage() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3 mb-4 flex-col sm:flex-row">
             <code className="flex-1 w-full px-3 sm:px-4 py-2 sm:py-3 bg-input border border-border rounded-lg text-foreground font-mono text-base sm:text-lg font-bold tracking-widest text-center sm:text-left">
-              {mockReferralData.code}
+              {stats.code}
             </code>
             <button
               onClick={handleCopy}
@@ -173,7 +218,7 @@ export default function ReferralsPage() {
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 sm:pt-4 border-t border-border">
             <span>Commission Rate</span>
-            <span className="font-semibold text-accent">{mockReferralData.rateBps / 100}%</span>
+            <span className="font-semibold text-accent">{stats.commissionRate}</span>
           </div>
         </div>
 
@@ -187,10 +232,10 @@ export default function ReferralsPage() {
             <h3 className="font-semibold text-sm sm:text-base text-card-foreground">Current Month Earnings</h3>
           </div>
           <p className="text-3xl sm:text-4xl font-bold text-accent">
-            ${(mockReferralData.currentMonth.estimatedCents / 100).toFixed(2)}
+            ${stats.monthlyEarnings.toFixed(2)}
           </p>
           <p className="text-xs text-muted-foreground mt-3 sm:mt-4 font-semibold">
-            {mockReferralData.currentMonth.month}
+            {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </p>
           <p className="text-xs text-muted-foreground">Estimated (pending aggregation)</p>
         </div>
@@ -206,7 +251,7 @@ export default function ReferralsPage() {
           <h2 className="text-base sm:text-lg font-semibold text-card-foreground">Payout History</h2>
         </div>
         <div className="space-y-2">
-          {mockReferralData.history.map((entry, index) => (
+          {stats.history.length > 0 ? stats.history.map((entry, index) => (
             <div
               key={entry.month}
               style={{
@@ -216,7 +261,7 @@ export default function ReferralsPage() {
             >
               <div>
                 <p className="text-xs sm:text-sm font-semibold text-foreground">{entry.month}</p>
-                <p className="text-xs text-muted-foreground">${(entry.totalCents / 100).toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">${entry.earned.toFixed(2)}</p>
               </div>
               <span
                 className={`text-xs px-2.5 py-1 rounded-full font-semibold whitespace-nowrap ${entry.paid ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"
@@ -225,6 +270,11 @@ export default function ReferralsPage() {
                 {entry.paid ? "Paid" : "Pending"}
               </span>
             </div>
+          )) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground text-sm">No referral earnings yet</p>
+            </div>
+          )}
           ))}
         </div>
       </div>

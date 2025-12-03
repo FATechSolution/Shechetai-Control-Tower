@@ -25,6 +25,8 @@ export default function SubscriptionsPage() {
 
   useEffect(() => {
     fetchData()
+    const interval = setInterval(() => fetchData(), 5000)
+    return () => clearInterval(interval)
   }, [])
 
   const fetchData = async () => {
@@ -91,11 +93,19 @@ export default function SubscriptionsPage() {
     if (!confirm("Are you sure you want to cancel this subscription?")) return
 
     try {
-      await apiClient.cancelSubscription(subscriptionId)
+      const response = await apiClient.cancelSubscription(subscriptionId)
+      
+      if (!response.success) {
+        setError(response.error || "Failed to cancel subscription")
+        console.error("Cancel response error:", response)
+        return
+      }
+      
       setSuccess("Subscription cancelled successfully!")
       await fetchData()
     } catch (error: any) {
       setError(error.message || "Failed to cancel subscription")
+      console.error("Cancel error:", error)
     }
   }
 
