@@ -27,19 +27,14 @@ export default function WhiteLabelPage() {
   useEffect(() => {
     fetchWhiteLabels()
     fetchTeams()
-    const interval = setInterval(() => {
-      fetchWhiteLabels()
-      fetchTeams()
-    }, 5000)
-    return () => clearInterval(interval)
   }, [])
 
   const fetchWhiteLabels = async () => {
     try {
       const response = await apiClient.getWhiteLabelConfigs()
       if (response.success) {
-        const data = response.data?.data || response.data || []
-        setWhiteLabels(Array.isArray(data) ? data : [])
+        const data = Array.isArray(response.data) ? response.data : []
+        setWhiteLabels(data)
       }
     } catch (error) {
       console.error('Error fetching white-labels:', error)
