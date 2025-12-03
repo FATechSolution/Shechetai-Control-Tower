@@ -24,6 +24,8 @@ export default function ReferralsPage() {
 
   useEffect(() => {
     fetchReferrals()
+    const interval = setInterval(() => fetchReferrals(), 5000)
+    return () => clearInterval(interval)
   }, [])
 
   const fetchReferrals = async () => {
@@ -142,9 +144,14 @@ export default function ReferralsPage() {
   }
 
   const stats = calculateStats()
+      { month: "2024-01", totalCents: 10000, paid: false },
+      { month: "2023-12", totalCents: 8500, paid: true },
+      { month: "2023-11", totalCents: 7200, paid: true },
+    ],
+  }
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(stats.code)
+    navigator.clipboard.writeText(mockReferralData.code)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -268,6 +275,7 @@ export default function ReferralsPage() {
               <p className="text-muted-foreground text-sm">No referral earnings yet</p>
             </div>
           )}
+          ))}
         </div>
       </div>
 
