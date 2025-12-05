@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server"
 import { withAuth } from "@/lib/api/middleware"
-import { successResponse, errorResponse, handleApiError } from "@/lib/api/helpers"
+import { successResponse, errorResponse, handleApiError, safeParseJson } from "@/lib/api/helpers"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 import nodemailer from "nodemailer"
 /**
@@ -10,7 +10,7 @@ import nodemailer from "nodemailer"
 export async function POST(request: NextRequest) {
   return withAuth(request, async (req) => {
     try {
-      const body = await req.json()
+      const body = await safeParseJson(req)
       
       if (!body.email) {
         return errorResponse("Missing required field: email", 400)
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
         secure: process.env.SMTP_SECURE === "true",
         auth: {
           user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
+          pass: process.env.SMTP_PASSWORD,
         },
       })
 
@@ -71,3 +71,4 @@ export async function POST(request: NextRequest) {
     }
   })
 }
+

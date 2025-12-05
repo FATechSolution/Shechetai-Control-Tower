@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server"
 import { withAuth } from "@/lib/api/middleware"
-import { successResponse, errorResponse, handleApiError } from "@/lib/api/helpers"
+import { successResponse, errorResponse, handleApiError, safeParseJson } from "@/lib/api/helpers"
 import { Database } from "@/lib/api/database-bridge"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 
@@ -20,7 +20,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   return withAuth(request, async (req, authContext) => {
     try {
       const { flagId } = await context.params
-      const body = await req.json()
+      const body = await safeParseJson(req)
 
       const flag = await Database.updateFeatureFlag(flagId, body)
       

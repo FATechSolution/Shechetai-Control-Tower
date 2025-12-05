@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server"
 import { withAuth } from "@/lib/api/middleware"
-import { successResponse, errorResponse, handleApiError, parsePagination, createPaginatedResponse } from "@/lib/api/helpers"
+import { successResponse, errorResponse, handleApiError, safeParseJson, parsePagination, createPaginatedResponse } from "@/lib/api/helpers"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 import { AgentDatabase } from "@/lib/api/firestore"
 
@@ -38,7 +38,6 @@ export async function GET(request: NextRequest) {
           a.name.toLowerCase().includes(search)
         )
       }
-      
       const total = filtered.length
       const start = (page - 1) * limit
       const paginated = filtered.slice(start, start + limit)
@@ -58,7 +57,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   return withAuth(request, async (req) => {
     try {
-      const body = await req.json()
+      const body = await safeParseJson(req)
       const token = req.headers.get("authorization")
 
       // Validate required fields
@@ -79,7 +78,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (!response.ok) {
-        // Backend failed — fall back to Firebase
+        // Backend failed â€” fall back to Firebase
         console.warn(`Backend agent create failed with ${response.status}, falling back to Firebase`)        
         const created = await AgentDatabase.create({
           name: body.name,
@@ -101,3 +100,4 @@ export async function POST(request: NextRequest) {
     }
   })
 }
+

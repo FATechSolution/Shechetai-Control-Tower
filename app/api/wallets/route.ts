@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server"
 import { withAuth } from "@/lib/api/middleware"
-import { successResponse, errorResponse, handleApiError } from "@/lib/api/helpers"
+import { successResponse, errorResponse, handleApiError, safeParseJson } from "@/lib/api/helpers"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 import { WalletDatabase, TeamDatabase } from "@/lib/api/firestore"
 
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   return withAuth(request, async (req) => {
     try {
-      const body = await req.json()
+      const body = await safeParseJson(req)
       
       // Validate required fields
       if (!body.teamId) {
@@ -78,3 +78,4 @@ export async function POST(request: NextRequest) {
     }
   })
 }
+

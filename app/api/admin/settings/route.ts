@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server"
 import { withAuth } from "@/lib/api/middleware"
-import { successResponse, handleApiError } from "@/lib/api/helpers"
+import { successResponse, errorResponse, handleApiError, safeParseJson } from "@/lib/api/helpers"
 import { Database } from "@/lib/api/database-bridge"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 /**
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   return withAuth(request, async (req, authContext) => {
     try {
-      const body = await req.json()
+      const body = await safeParseJson(req)
       
       if (!body.key || body.value === undefined) {
         return successResponse({ success: false, error: "Missing required fields: key, value" })
@@ -53,3 +53,4 @@ export async function PUT(request: NextRequest) {
     }
   }, "super_admin")
 }
+

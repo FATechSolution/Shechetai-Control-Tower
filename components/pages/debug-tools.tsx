@@ -180,45 +180,11 @@ export default function DebugToolsPage() {
             <h3 className="font-semibold text-sm sm:text-base text-card-foreground">API Base</h3>
           </div>
           <code className="block text-xs font-mono text-foreground bg-input p-2.5 sm:p-3 rounded break-all border border-border">
-            https://hooks.shechet.com
+            {typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}
           </code>
           <p className="text-xs text-muted-foreground mt-3 font-semibold">
-            Namespace: <code className="text-foreground">/_config</code>
+            Namespace: <code className="text-foreground">/api</code>
           </p>
-        </div>
-      </div>
-
-      {/* Auth Debug (Development Only) */}
-      <div
-        className="bg-card border border-border rounded-lg p-4 sm:p-6 animate-fade-in-up"
-        style={{ animationDelay: "0.3s" }}
-      >
-        <div className="flex items-center justify-between mb-4 flex-col sm:flex-row gap-2 sm:gap-0">
-          <h2 className="text-base sm:text-lg font-semibold text-card-foreground">Auth Debug (Dev Only)</h2>
-          <span className="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-full font-semibold">
-            Non-Prod
-          </span>
-        </div>
-        <p className="text-xs sm:text-sm text-muted-foreground mb-4">
-          These utilities are for local development only and disabled in production
-        </p>
-        <div className="space-y-2">
-          {[
-            { label: "Echo Authorization Header", icon: Check },
-            { label: "Verify ID Token", icon: Check },
-            { label: "Show Signer Fingerprint", icon: Check },
-          ].map((item, index) => (
-            <button
-              key={item.label}
-              style={{
-                animation: `fadeInUp 0.4s ease-out ${0.3 + index * 0.08}s both`,
-              }}
-              className="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 bg-muted/30 border border-border rounded-lg text-xs sm:text-sm text-foreground hover:bg-muted/50 hover:border-primary/50 transition-all duration-200 flex items-center justify-between group"
-            >
-              <span className="font-medium">{item.label}</span>
-              <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-            </button>
-          ))}
         </div>
       </div>
     </div>

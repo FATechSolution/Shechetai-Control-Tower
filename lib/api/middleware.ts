@@ -36,6 +36,19 @@ export async function authenticate(request: NextRequest): Promise<AuthContext | 
   const authHeader = request.headers.get("authorization")
   const { ip, userAgent } = getClientInfo(request)
 
+  // Dev mode bypass - allow all requests in development
+  if (process.env.NODE_ENV === "development") {
+    return {
+      userId: "dev-user",
+      email: "dev@shechetai.com",
+      role: "super_admin",
+      isSuperAdmin: true,
+      firebaseUid: "dev-user",
+      ip,
+      userAgent,
+    }
+  }
+
   // Check API Key for system operations
   if (apiKey) {
     // Validate against environment variable

@@ -98,3 +98,20 @@ export function createPaginatedResponse<T>(data: T[], total: number, page: numbe
     },
   }
 }
+
+/**
+ * Parse JSON from request body safely
+ */
+export async function safeParseJson(req: Request): Promise<Record<string, any>> {
+  try {
+    const contentType = req.headers.get("content-type")
+    if (!contentType || !contentType.includes("application/json")) {
+      return {}
+    }
+    const body = await req.json()
+    return typeof body === "object" ? body : {}
+  } catch (error) {
+    console.error("Failed to parse JSON:", error)
+    return {}
+  }
+}

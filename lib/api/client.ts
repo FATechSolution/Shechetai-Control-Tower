@@ -53,8 +53,10 @@ class ApiClient {
         // Fallback to API key if no Firebase token
         headers["x-api-key"] = this.apiKey
       }
+      // In dev mode, no token is needed due to middleware bypass
     } catch (error) {
-      console.error("Error getting Firebase token:", error)
+      console.warn("Error getting Firebase token (continuing without auth):", error)
+      // Continue without token - dev mode will bypass auth anyway
     }
 
     // Merge with provided headers
@@ -73,13 +75,22 @@ class ApiClient {
       const data: ApiResponse<T> = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "API request failed")
+        console.error(`API Error [${response.status}] at ${endpoint}:`, data)
+        return {
+          success: false,
+          error: data.error || "API request failed",
+          data: null as any,
+        }
       }
 
       return data
     } catch (error) {
-      console.error("API Error:", error)
-      throw error
+      console.error(`Request failed for ${endpoint}:`, error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Request failed",
+        data: null as any,
+      }
     }
   }
 

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server"
 import { withAuth } from "@/lib/api/middleware"
-import { successResponse, errorResponse, handleApiError, parsePagination, createPaginatedResponse } from "@/lib/api/helpers"
+import { successResponse, errorResponse, handleApiError, safeParseJson, parsePagination, createPaginatedResponse } from "@/lib/api/helpers"
 import { Database } from "@/lib/api/database-bridge"
 import { initializeFirebaseAdmin } from "@/lib/firebase/admin"
 /**
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   return withAuth(request, async (req) => {
     try {
-      const body = await req.json()
+      const body = await safeParseJson(req)
       
       // Validate required fields
       if (!body.teamId || !body.planType || !body.billingCycle || body.amount === undefined) {
@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
 
       const contract = await Database.createContract({
         teamId: body.teamId,
+        agentId: body.agentId,
         planType: body.planType,
         billingCycle: body.billingCycle,
         amount: body.amount,
@@ -67,3 +68,4 @@ export async function POST(request: NextRequest) {
     }
   })
 }
+

@@ -1,12 +1,19 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, AlertCircle, CheckCircle, Clock } from "lucide-react"
+import { Search, AlertCircle, CheckCircle, Clock, ExternalLink } from "lucide-react"
 import { getCurrentUserToken } from "@/lib/firebase/client"
+import { useRouter } from "next/navigation"
+import { apiClient } from "@/lib/api/client"
 
 export default function OverviewPage() {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [isSearching, setIsSearching] = useState(false)
   const [stats, setStats] = useState({ agents: 0, teams: 0, loading: true })
+  const [allAgents, setAllAgents] = useState<any[]>([])
+  const [allTeams, setAllTeams] = useState<any[]>([])
 
   useEffect(() => {
     const fetchOverviewData = async () => {
@@ -14,6 +21,7 @@ export default function OverviewPage() {
         const token = await getCurrentUserToken()
         if (!token) return
 
+        // Fetch overview stats
         const response = await fetch('/api/overview', {
           headers: { 'Authorization': `Bearer ${token}` }
         })
@@ -26,6 +34,20 @@ export default function OverviewPage() {
             loading: false
           })
         }
+
+        // Fetch all agents and teams for search
+        const agentsRes = await apiClient.getAgents()
+        const teamsRes = await apiClient.getTeams()
+
+        if (agentsRes?.success && agentsRes?.data) {
+          const agentsData = agentsRes.data.data || agentsRes.data || []
+          setAllAgents(Array.isArray(agentsData) ? agentsData : [])
+        }
+
+        if (teamsRes?.success && teamsRes?.data) {
+          const teamsData = teamsRes.data.data || teamsRes.data || []
+          setAllTeams(Array.isArray(teamsData) ? teamsData : [])
+        }
       } catch (error) {
         console.error('Error fetching overview:', error)
         setStats(prev => ({ ...prev, loading: false }))
@@ -34,6 +56,59 @@ export default function OverviewPage() {
 
     fetchOverviewData()
   }, [])
+
+  // Perform search when query changes
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([])
+      return
+    }
+
+    setIsSearching(true)
+    const searchLower = searchQuery.toLowerCase()
+    
+    const results: any[] = []
+
+    // Search agents
+    allAgents.forEach(agent => {
+      const agentId = agent.agentId || agent.id || ""
+      const name = agent.name || ""
+      if (
+        agentId.toLowerCase().includes(searchLower) ||
+        name.toLowerCase().includes(searchLower)
+      ) {
+        results.push({
+          type: "agent",
+          id: agentId,
+          name: name,
+          teamId: agent.teamId,
+          status: agent.status,
+          icon: "⚙️"
+        })
+      }
+    })
+
+    // Search teams
+    allTeams.forEach(team => {
+      const teamId = team.teamId || team.id || ""
+      const name = team.name || ""
+      if (
+        teamId.toLowerCase().includes(searchLower) ||
+        name.toLowerCase().includes(searchLower)
+      ) {
+        results.push({
+          type: "team",
+          id: teamId,
+          name: name,
+          status: team.status,
+          icon: "👥"
+        })
+      }
+    })
+
+    setSearchResults(results)
+    setIsSearching(false)
+  }, [searchQuery, allAgents, allTeams])
 
   const healthMetrics = [
     {
@@ -104,8 +179,36 @@ export default function OverviewPage() {
             className="mt-3 sm:mt-4 p-3 sm:p-4 bg-primary/5 border border-primary/20 rounded-lg text-xs sm:text-sm text-muted-foreground animate-fade-in"
             style={{ animation: `fadeIn 0.2s ease - out` }}
           >
-            <p className="font-semibold text-foreground mb-1">Search Results</p>
-            Searching for: <span className="font-mono text-primary font-semibold">{searchQuery}</span>
+            <p className="font-semibold text-foreground mb-3">
+              Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+            </p>
+            {searchResults.length > 0 ? (
+              <div className="space-y-2">
+                {searchResults.slice(0, 5).map((result, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => router.push('/dashboard/agents-teams')}
+                    className="w-full text-left p-2 bg-background/50 border border-border/50 rounded-lg hover:bg-primary/10 hover:border-primary/50 transition-all duration-200 flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">{result.icon}</span>
+                      <div>
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">{result.name}</p>
+                        <p className="text-xs text-muted-foreground">{result.type === 'agent' ? `Team: ${result.teamId}` : `ID: ${result.id}`}</p>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                  </button>
+                ))}
+                {searchResults.length > 5 && (
+                  <p className="text-xs text-muted-foreground text-center py-1">
+                    +{searchResults.length - 5} more results
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">No agents or teams found matching "{searchQuery}"</p>
+            )}
           </div>
         )}
       </div>

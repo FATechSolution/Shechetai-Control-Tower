@@ -1,14 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Filter, ChevronRight, Plus, Loader2, Users } from "lucide-react"
+import { Search, Filter, ChevronRight, Plus, Loader2, Users, Zap } from "lucide-react"
 import { apiClient } from "@/lib/api/client"
 import { Dialog } from "@/components/ui/dialog-simple"
 
 export default function AgentsTeamsPage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all")
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [agents, setAgents] = useState<any[]>([])
   const [teams, setTeams] = useState<any[]>([])
+  const [teamMembers, setTeamMembers] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(true)
 
   // Create Agent Dialog State
@@ -18,6 +21,12 @@ export default function AgentsTeamsPage() {
   // Create Team Dialog State
   const [isCreateTeamDialogOpen, setIsCreateTeamDialogOpen] = useState(false)
   const [isSubmittingTeam, setIsSubmittingTeam] = useState(false)
+
+  // Assign Seats Dialog
+  const [isAssignSeatsDialogOpen, setIsAssignSeatsDialogOpen] = useState(false)
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("")
+  const [seatsToAssign, setSeatsToAssign] = useState(1)
+  const [isAssigningSeats, setIsAssigningSeats] = useState(false)
 
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
@@ -33,7 +42,7 @@ export default function AgentsTeamsPage() {
   // Team Form Data
   const [teamFormData, setTeamFormData] = useState({
     name: "",
-    ownerId: "admin", // Default owner
+    ownerId: "admin",
     seatCap: 5,
     description: "",
   })
@@ -45,24 +54,30 @@ export default function AgentsTeamsPage() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [agentsResponse, teamsResponse] = await Promise.all([
-        apiClient.getAgents(),
-        apiClient.getTeams(),
-      ])
+      setError("")
+      
+      const agentsResponse = await apiClient.getAgents()
+      const teamsResponse = await apiClient.getTeams()
 
       // Handle response format from local API
-      if (agentsResponse.success && agentsResponse.data) {
+      if (agentsResponse?.success && agentsResponse?.data) {
         const agentsData = agentsResponse.data.data || agentsResponse.data || []
-        setAgents(Array.isArray(agentsData) ? agentsData : [])
+        const agentsArray = Array.isArray(agentsData) ? agentsData : []
+        setAgents(agentsArray)
+      } else {
+        console.warn("Failed to fetch agents:", agentsResponse?.error)
       }
 
-      if (teamsResponse.success && teamsResponse.data) {
+      if (teamsResponse?.success && teamsResponse?.data) {
         const teamsData = teamsResponse.data.data || teamsResponse.data || []
-        setTeams(Array.isArray(teamsData) ? teamsData : [])
+        const teamsArray = Array.isArray(teamsData) ? teamsData : []
+        setTeams(teamsArray)
+      } else {
+        console.warn("Failed to fetch teams:", teamsResponse?.error)
       }
     } catch (error) {
       console.error('Error fetching data:', error)
-      setError('Failed to load agents and teams')
+      setError("Failed to load data. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -86,7 +101,7 @@ export default function AgentsTeamsPage() {
         setSuccess("Agent created successfully!")
         setFormData({ name: "", teamId: "", status: "active", description: "" })
         setIsCreateDialogOpen(false)
-        await fetchData() // Refresh list
+        await fetchData()
       }
     } catch (error: any) {
       setError(error.message || "Failed to create agent")
@@ -105,21 +120,17 @@ export default function AgentsTeamsPage() {
       const response = await apiClient.createTeam({
         name: teamFormData.name,
         ownerId: teamFormData.ownerId,
-        seatCap: Number(teamFormData.seatCap),
-        metadata: teamFormData.description ? { description: teamFormData.description } : undefined,
+        metadata: {
+          seatCap: teamFormData.seatCap,
+          description: teamFormData.description,
+        },
       })
 
       if (response.success) {
         setSuccess("Team created successfully!")
-        // Add new team to list immediately
-        if (response.data) {
-          setTeams(prev => [...prev, response.data])
-          // Auto-select this team if agent dialog is open (optional)
-        }
         setTeamFormData({ name: "", ownerId: "admin", seatCap: 5, description: "" })
         setIsCreateTeamDialogOpen(false)
-        // We don't need to fetch data because we updated local state, 
-        // and fetching might fail if list endpoint is broken.
+        await fetchData()
       }
     } catch (error: any) {
       setError(error.message || "Failed to create team")
@@ -128,13 +139,78 @@ export default function AgentsTeamsPage() {
     }
   }
 
-  const mockAgents = agents.map(agent => ({
-    id: agent.agentId,
-    name: agent.name,
-    teamId: agent.teamId,
-    status: agent.status,
-    seats: agent.seatUsage || { used: 0, cap: 0 }
-  }))
+  const handleAssignSeats = async () => {
+    if (!selectedAgentId || seatsToAssign < 1) {
+      setError("Invalid seat assignment")
+      return
+    }
+
+    setIsAssigningSeats(true)
+    try {
+      // Store seat assignment in agent metadata
+      const agent = agents.find(a => (a.agentId || a.id) === selectedAgentId)
+      if (!agent) {
+        setError("Agent not found")
+        return
+      }
+
+      const response = await apiClient.updateAgent(selectedAgentId, {
+        metadata: {
+          ...agent.metadata,
+          seatsAssigned: seatsToAssign,
+        },
+      })
+
+      if (response.success) {
+        setSuccess(`Assigned ${seatsToAssign} seat(s) to ${agent.name}`)
+        setIsAssignSeatsDialogOpen(false)
+        setSelectedAgentId("")
+        setSeatsToAssign(1)
+        await fetchData()
+      }
+    } catch (error: any) {
+      setError(error.message || "Failed to assign seats")
+    } finally {
+      setIsAssigningSeats(false)
+    }
+  }
+
+  const getAgentSeats = (agent: any) => {
+    const assigned = agent.metadata?.seatsAssigned || 0
+    const used = agent.metadata?.seatsUsed || 0
+    return { used, assigned }
+  }
+
+  const filteredAgents = agents.filter(agent => {
+    const searchLower = searchQuery.toLowerCase()
+    const agentId = agent.agentId || agent.id || ""
+    const name = agent.name || ""
+    const teamId = agent.teamId || ""
+    const status = agent.status || "active"
+
+    // Search filter
+    const matchesSearch = (
+      agentId.toLowerCase().includes(searchLower) ||
+      name.toLowerCase().includes(searchLower) ||
+      teamId.toLowerCase().includes(searchLower)
+    )
+
+    // Status filter
+    const matchesStatus = filterStatus === "all" || status === filterStatus
+
+    return matchesSearch && matchesStatus
+  })
+
+  const mockAgents = filteredAgents.map(agent => {
+    const seats = getAgentSeats(agent)
+    return {
+      id: agent.agentId || agent.id,
+      name: agent.name,
+      teamId: agent.teamId,
+      status: agent.status,
+      seats
+    }
+  })
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-6 animate-fade-in-up">
@@ -190,10 +266,43 @@ export default function AgentsTeamsPage() {
               className="w-full pl-10 pr-3 sm:pr-4 py-2 sm:py-3 bg-input border border-border rounded-lg text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
             />
           </div>
-          <button className="flex items-center justify-center gap-2 px-4 py-2 sm:py-3 bg-input border border-border rounded-lg text-foreground hover:bg-muted transition-all duration-200 hover:shadow-md whitespace-nowrap">
-            <Filter className="w-4 h-4" />
-            <span className="text-sm">Filter</span>
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={`flex items-center justify-center gap-2 px-4 py-2 sm:py-3 rounded-lg transition-all duration-200 hover:shadow-md whitespace-nowrap ${
+                filterStatus !== "all"
+                  ? "bg-primary text-primary-foreground border border-primary"
+                  : "bg-input border border-border text-foreground hover:bg-muted"
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              <span className="text-sm">
+                {filterStatus === "all" ? "Filter" : `Status: ${filterStatus}`}
+              </span>
+            </button>
+
+            {/* Filter Dropdown */}
+            {isFilterOpen && (
+              <div className="absolute top-full right-0 mt-2 bg-card border border-border rounded-lg shadow-lg z-10 min-w-[180px]">
+                {["all", "active", "inactive"].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => {
+                      setFilterStatus(status as any)
+                      setIsFilterOpen(false)
+                    }}
+                    className={`w-full text-left px-4 py-3 text-sm transition-all duration-200 ${
+                      filterStatus === status
+                        ? "bg-primary/20 text-primary font-semibold border-l-2 border-primary"
+                        : "text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -403,6 +512,88 @@ export default function AgentsTeamsPage() {
         </form>
       </Dialog>
 
+      {/* Assign Seats Dialog */}
+      <Dialog
+        isOpen={isAssignSeatsDialogOpen}
+        onClose={() => {
+          setIsAssignSeatsDialogOpen(false)
+          setSelectedAgentId("")
+          setSeatsToAssign(1)
+          setError("")
+        }}
+        title="Assign Seats to Agent"
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            handleAssignSeats()
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Agent *
+            </label>
+            <select
+              value={selectedAgentId}
+              onChange={(e) => setSelectedAgentId(e.target.value)}
+              required
+              className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Select an agent...</option>
+              {agents.map((agent) => (
+                <option key={agent.agentId || agent.id} value={agent.agentId || agent.id}>
+                  {agent.name} ({agent.agentId || agent.id})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Number of Seats *
+            </label>
+            <input
+              type="number"
+              value={seatsToAssign}
+              onChange={(e) => setSeatsToAssign(Number(e.target.value))}
+              min={1}
+              required
+              className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Number of execution seats to allocate</p>
+          </div>
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={() => {
+                setIsAssignSeatsDialogOpen(false)
+                setError("")
+              }}
+              className="flex-1 px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
+              disabled={isAssigningSeats}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isAssigningSeats}
+              className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isAssigningSeats && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isAssigningSeats ? "Assigning..." : "Assign Seats"}
+            </button>
+          </div>
+        </form>
+      </Dialog>
+
       <div className="space-y-2 sm:space-y-3">
         {loading ? (
           <div className="text-center py-12">
@@ -417,13 +608,13 @@ export default function AgentsTeamsPage() {
         ) : (
           mockAgents.map((agent, index) => (
             <div
-              key={agent.id}
+              key={`${agent.id}-${agent.teamId}-${index}`}
               style={{
                 animation: `fadeInUp 0.4s ease-out ${index * 0.1}s both`,
               }}
               className="bg-card border border-border rounded-lg p-3 sm:p-4 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 cursor-pointer group"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex flex-col gap-3 sm:gap-4" key={agent.id}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold text-sm sm:text-base text-card-foreground group-hover:text-primary transition-colors">
@@ -445,13 +636,25 @@ export default function AgentsTeamsPage() {
                     </span>
                     <span className="text-muted-foreground">
                       Seats:{" "}
-                      <span className="text-foreground font-semibold">
-                        {agent.seats.used}/{agent.seats.cap}
+                      <span className={`font-semibold ${agent.seats.assigned > 0 ? "text-green-400" : "text-yellow-400"}`}>
+                        {agent.seats.used}/{agent.seats.assigned}
                       </span>
                     </span>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0" />
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setSelectedAgentId(agent.id)
+                      setIsAssignSeatsDialogOpen(true)
+                    }}
+                    className="px-3 py-1.5 bg-accent/10 text-accent rounded-lg hover:bg-accent/20 transition-colors text-xs font-medium"
+                  >
+                    <Zap className="w-3 h-3 inline mr-1" />
+                    Assign Seats
+                  </button>
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0" />
+                </div>
               </div>
             </div>
           ))

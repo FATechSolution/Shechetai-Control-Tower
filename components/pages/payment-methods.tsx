@@ -7,6 +7,8 @@ import { Dialog } from "@/components/ui/dialog-simple"
 
 export default function PaymentMethodsPage() {
   const [paymentMethods, setPaymentMethods] = useState<any[]>([])
+  const [teams, setTeams] = useState<any[]>([])
+  const [selectedTeamId, setSelectedTeamId] = useState<string>("")
   const [loading, setLoading] = useState(true)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -23,13 +25,42 @@ export default function PaymentMethodsPage() {
   })
 
   useEffect(() => {
-    fetchPaymentMethods()
+    fetchTeamsAndMethods()
   }, [])
 
-  const fetchPaymentMethods = async () => {
+  useEffect(() => {
+    if (selectedTeamId) {
+      fetchPaymentMethods()
+    }
+  }, [selectedTeamId])
+
+  const fetchTeamsAndMethods = async () => {
     setLoading(true)
     try {
-      const response = await apiClient.getPaymentMethods()
+      const teamsResponse = await apiClient.getTeams()
+      const teamsList = teamsResponse.data?.data || teamsResponse.data || []
+      const teamArray = Array.isArray(teamsList) ? teamsList : []
+      
+      setTeams(teamArray)
+      
+      // Select first team by default
+      if (teamArray.length > 0) {
+        const firstTeamId = teamArray[0].teamId || teamArray[0].id
+        setSelectedTeamId(firstTeamId)
+      }
+    } catch (error) {
+      console.error("Error fetching teams:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchPaymentMethods = async () => {
+    if (!selectedTeamId) return
+    
+    setLoading(true)
+    try {
+      const response = await apiClient.getPaymentMethods(selectedTeamId)
       if (response.success) {
         const data = response.data?.data || response.data || []
         setPaymentMethods(Array.isArray(data) ? data : [])
@@ -45,10 +76,17 @@ export default function PaymentMethodsPage() {
     e.preventDefault()
     setError("")
     setSuccess("")
+    
+    if (!selectedTeamId) {
+      setError("No team selected")
+      return
+    }
+    
     setIsSubmitting(true)
 
     try {
       const response = await apiClient.addPaymentMethod({
+        teamId: selectedTeamId,
         type: formData.type,
         cardNumber: formData.cardNumber.replace(/\s/g, ""),
         cardHolderName: formData.cardHolderName,
@@ -133,13 +171,29 @@ export default function PaymentMethodsPage() {
             Manage your payment methods and billing information
           </p>
         </div>
-        <button
-          onClick={() => setIsAddDialogOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Payment Method
-        </button>
+        <div className="flex flex-col gap-2">
+          {teams.length > 0 && (
+            <select
+              value={selectedTeamId}
+              onChange={(e) => setSelectedTeamId(e.target.value)}
+              className="px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+            >
+              <option value="">Select a team...</option>
+              {teams.map((team) => (
+                <option key={team.teamId || team.id} value={team.teamId || team.id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
+          )}
+          <button
+            onClick={() => setIsAddDialogOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Payment Method
+          </button>
+        </div>
       </div>
 
       {/* Payment Methods Grid */}

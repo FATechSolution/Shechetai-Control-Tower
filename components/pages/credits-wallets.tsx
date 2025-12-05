@@ -22,8 +22,6 @@ export default function CreditsWalletsPage() {
 
   useEffect(() => {
     fetchData()
-    const interval = setInterval(fetchData, 5000)
-    return () => clearInterval(interval)
   }, [sortBy])
 
   const fetchData = async () => {

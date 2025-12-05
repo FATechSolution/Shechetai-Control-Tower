@@ -1,6 +1,6 @@
 "use client"
 
-import { Settings, Bell, Menu, X, LogOut } from "lucide-react"
+import { LogOut, Menu, X } from "lucide-react"
 import { signOutUser } from "@/lib/firebase/client"
 import { useRouter } from "next/navigation"
 
@@ -54,12 +54,6 @@ export function TopBar({ userEmail, isSuperAdmin, onMenuToggle, isSidebarOpen }:
         </div>
 
         {/* Buttons - Icons only on mobile */}
-        <button className="p-2 hover:bg-muted rounded-lg transition-colors duration-200 group cursor-pointer">
-          <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-        </button>
-        <button className="p-2 hover:bg-muted rounded-lg transition-colors duration-200 group cursor-pointer">
-          <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-        </button>
         <button 
           onClick={handleLogout}
           className="p-2 hover:bg-destructive/10 rounded-lg transition-colors duration-200 group cursor-pointer"

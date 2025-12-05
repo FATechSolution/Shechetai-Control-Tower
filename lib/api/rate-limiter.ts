@@ -49,6 +49,11 @@ export async function rateLimit(
   request: NextRequest,
   type: "global" | "strict" | "auth" = "global"
 ): Promise<{ success: boolean; response?: Response }> {
+  // Disable rate limiting in development mode
+  if (process.env.NODE_ENV === "development") {
+    return { success: true }
+  }
+
   const clientId = getClientIdentifier(request)
   
   let limiter: RateLimiterMemory
