@@ -1,3 +1,0 @@
-module.exports=[87924,(a,b,c)=>{"use strict";b.exports=a.r(42602).vendored["react-ssr"].ReactJsxRuntime},60350,a=>{"use strict";var b=a.i(87924),c=a.i(72131),d=a.i(50944),e=a.i(62394);function f(){let a=(0,d.useRouter)();return(0,c.useEffect)(()=>{(0,e.getCurrentUser)()?a.push("/dashboard"):a.push("/login")},[a]),(0,b.jsx)("div",{className:"min-h-screen flex items-center justify-center bg-background",children:(0,b.jsx)("div",{className:"w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"})})}a.s(["default",()=>f])}];
-
-//# sourceMappingURL=_877f0316._.js.map
